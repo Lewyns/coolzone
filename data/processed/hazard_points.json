@@ -1,0 +1,153 @@
+[
+  {
+    "_comment": "⚠️ CUSTOMIZABLE DATA - ข้อมูลตัวอย่าง สามารถแก้ไขเป็นข้อมูลของโปรเจคคุณเองได้",
+    "_instructions": "แก้ไข lat, lng, name, address ให้ตรงกับพื้นที่เสี่ยงในเมืองของคุณ | Edit lat, lng, name, address to match hazard points in your city",
+    "_risk_levels": "high (สูง), medium (กลาง), low (ต่ำ)",
+    "_heat_factors": "no_shade, concrete, asphalt, heat_reflection, traffic_pollution, crowded, poor_ventilation, open_area, limited_shade, water_reflection"
+  },
+  {
+    "id": 1,
+    "name": "ลานจอดรถคอนกรีต สยาม",
+    "name_en": "Siam Concrete Parking Lot",
+    "risk_level": "high",
+    "lat": 13.7458,
+    "lng": 100.5331,
+    "address": "ถนนพระราม 1 ปทุมวัน กรุงเทพฯ",
+    "description": "พื้นที่คอนกรีตเปิดโล่ง ไม่มีร่มเงา",
+    "warning": "หลีกเลี่ยงการยืนนานเกิน 10 นาที",
+    "heat_factors": ["no_shade", "concrete", "heat_reflection"]
+  },
+  {
+    "id": 2,
+    "name": "ทางด่วน บริเวณท่าพระ",
+    "name_en": "Expressway near Tha Phra",
+    "risk_level": "high",
+    "lat": 13.7265,
+    "lng": 100.4923,
+    "address": "ทางพิเศษเฉลิมมหานคร กรุงเทพฯ",
+    "description": "พื้นที่แอสฟัลต์ร้อน มลพิษจากรถ",
+    "warning": "อุณหภูมิสูงกว่าพื้นที่ทั่วไป 5-7°C",
+    "heat_factors": ["asphalt", "no_shade", "traffic_pollution", "heat_reflection"]
+  },
+  {
+    "id": 3,
+    "name": "สนามหลวง",
+    "name_en": "Sanam Luang",
+    "risk_level": "medium",
+    "lat": 13.7549,
+    "lng": 100.4930,
+    "address": "ถนนราชดำเนิน พระนคร กรุงเทพฯ",
+    "description": "พื้นที่เปิดโล่ง มีร้มเงาบางส่วน",
+    "warning": "หลีกเลี่ยงช่วง 11:00-15:00",
+    "heat_factors": ["open_area", "limited_shade"]
+  },
+  {
+    "id": 4,
+    "name": "ตลาดจตุจักร",
+    "name_en": "Chatuchak Market",
+    "risk_level": "high",
+    "lat": 13.7994,
+    "lng": 100.5509,
+    "address": "ถนนกำแพงเพชร 2 จตุจักร กรุงเทพฯ",
+    "description": "พื้นที่แออัด อากาศไม่ถ่ายเท",
+    "warning": "อุณหภูมิภายในสูงกว่าภายนอก 3-5°C",
+    "heat_factors": ["crowded", "poor_ventilation", "concrete"]
+  },
+  {
+    "id": 5,
+    "name": "ถนนสุขุมวิท (ช่วงอโศก-นานา)",
+    "name_en": "Sukhumvit Road (Asoke-Nana)",
+    "risk_level": "high",
+    "lat": 13.7408,
+    "lng": 100.5591,
+    "address": "ถนนสุขุมวิท วัฒนา กรุงเทพฯ",
+    "description": "ทางเท้าคอนกรีต แดดจัด",
+    "warning": "หลีกเลี่ยงการเดินทางช่วง 12:00-14:00",
+    "heat_factors": ["concrete", "no_shade", "traffic_pollution"]
+  },
+  {
+    "id": 6,
+    "name": "สนามกีฬาแห่งชาติ",
+    "name_en": "National Stadium",
+    "risk_level": "medium",
+    "lat": 13.7461,
+    "lng": 100.5292,
+    "address": "ถนนพระราม 1 ปทุมวัน กรุงเทพฯ",
+    "description": "พื้นที่กลางแจ้ง ร้อนในช่วงกลางวัน",
+    "warning": "ควรหลีกเลี่ยงกิจกรรมกลางแจ้งช่วง 11:00-16:00",
+    "heat_factors": ["open_area", "limited_shade"]
+  },
+  {
+    "id": 7,
+    "name": "สะพานข้ามแยกอโศก",
+    "name_en": "Asoke Skywalk",
+    "risk_level": "medium",
+    "lat": 13.7373,
+    "lng": 100.5591,
+    "address": "ถนนสุขุมวิท วัฒนา กรุงเทพฯ",
+    "description": "สะพานคอนกรีตเปิดโล่ง",
+    "warning": "หลีกเลี่ยงการยืนพักนาน",
+    "heat_factors": ["concrete", "no_shade", "heat_reflection"]
+  },
+  {
+    "id": 8,
+    "name": "ท่าเรือสาทร",
+    "name_en": "Sathorn Pier",
+    "risk_level": "medium",
+    "lat": 13.7214,
+    "lng": 100.5145,
+    "address": "ท่าเรือราชวงศ์ สาทร กรุงเทพฯ",
+    "description": "พื้นที่เปิดโล่งริมน้ำ",
+    "warning": "ควรมีร่มกันแดด",
+    "heat_factors": ["open_area", "water_reflection"]
+  },
+  {
+    "id": 9,
+    "name": "ถนนข้าวสาร",
+    "name_en": "Khaosan Road",
+    "risk_level": "high",
+    "lat": 13.7588,
+    "lng": 100.4975,
+    "address": "ถนนข้าวสาร พระนคร กรุงเทพฯ",
+    "description": "พื้นที่แคบ อาคารสูงบังลม",
+    "warning": "อากาศอบอ้าว อุณหภูมิสูง",
+    "heat_factors": ["poor_ventilation", "concrete", "crowded"]
+  },
+  {
+    "id": 10,
+    "name": "สวนจตุจักร",
+    "name_en": "Chatuchak Park",
+    "risk_level": "low",
+    "lat": 13.8028,
+    "lng": 100.5514,
+    "address": "ถนนพหลโยธิน จตุจักร กรุงเทพฯ",
+    "description": "พื้นที่สีเขียว มีร้มเงาจากต้นไม้",
+    "warning": "ควรดื่มน้ำเป็นประจำ",
+    "heat_factors": ["shaded", "greenery"],
+    "note": "พื้นที่ปลอดภัยกว่าโดยรอบ"
+  },
+  {
+    "id": 11,
+    "name": "ลานคอนกรีตหน้าสถานี BTS มหานาค",
+    "name_en": "BTS Mochit Concrete Plaza",
+    "risk_level": "high",
+    "lat": 13.8018,
+    "lng": 100.5536,
+    "address": "ถนนพหลโยธิน จตุจักร กรุงเทพฯ",
+    "description": "พื้นที่คอนกรีตเปิดโล่ง",
+    "warning": "อุณหภูมิสูงมากช่วงกลางวัน",
+    "heat_factors": ["concrete", "no_shade", "heat_reflection"]
+  },
+  {
+    "id": 12,
+    "name": "ถนนราชดำเนิน (ช่วงพระนคร)",
+    "name_en": "Ratchadamnoen Road (Phra Nakhon)",
+    "risk_level": "medium",
+    "lat": 13.7554,
+    "lng": 100.4992,
+    "address": "ถนนราชดำเนิน พระนคร กรุงเทพฯ",
+    "description": "ถนนกว้าง มีร้มเงาบางส่วน",
+    "warning": "หลีกเลี่ยงช่วง 12:00-15:00",
+    "heat_factors": ["limited_shade", "concrete"]
+  }
+]

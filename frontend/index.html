@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoolZone - ระบบเตือนภัยความร้อนเมือง</title>
+
+    <!-- Google Fonts - Prompt -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Leaflet Routing Machine CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+
+    <!-- Custom Styles -->
+    <style>
+        * {
+            font-family: 'Prompt', sans-serif;
+        }
+
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 350px;
+        }
+
+        .bottom-nav {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .left-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            max-width: 320px;
+        }
+
+        /* Adjust Leaflet zoom control position */
+        .leaflet-bottom.leaflet-right {
+            bottom: 80px !important;
+        }
+
+        /* Hide Leaflet Routing Machine instruction panel */
+        .leaflet-routing-container {
+            display: none;
+        }
+
+        /* Phase 6: Animations */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Toast notification */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            z-index: 9999;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(400px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .bottom-nav {
+                padding: 8px 0;
+            }
+
+            .bottom-nav button {
+                padding: 8px 12px !important;
+                font-size: 11px;
+            }
+
+            .bottom-nav button span {
+                display: none;
+            }
+
+            .bottom-nav button svg {
+                width: 22px;
+                height: 22px;
+                margin: 0;
+            }
+
+            .bottom-nav .container {
+                padding: 0 8px;
+            }
+
+            .bottom-nav .flex {
+                gap: 6px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .info-panel {
+                top: auto;
+                bottom: 70px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                max-height: 50vh;
+                overflow-y: auto;
+            }
+
+            .left-panel {
+                display: none;
+            }
+
+            .toast {
+                left: 20px;
+                right: 20px;
+                bottom: 80px;
+            }
+
+            /* Hide panels by default on mobile - show via toggle */
+            #risk-badge,
+            #forecast-panel {
+                display: none;
+            }
+
+            /* Show when toggled */
+            #risk-badge.show-mobile,
+            #forecast-panel.show-mobile {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 bg-blue-600 flex items-center justify-center z-50">
+        <div class="text-center text-white">
+            <div class="mb-4">
+                <svg class="animate-spin h-16 w-16 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">CoolZone</h2>
+            <p class="text-sm">กำลังโหลดข้อมูล...</p>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div id="map"></div>
+
+    <!-- Info Panel -->
+    <div class="info-panel">
+        <!-- GPS Status Card -->
+        <div id="gps-status" class="bg-white rounded-lg shadow-lg p-4 mb-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <span class="text-sm font-semibold text-gray-700">ตำแหน่งของคุณ</span>
+                </div>
+                <span id="gps-status-badge" class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                    กำลังตรวจสอบ...
+                </span>
+            </div>
+            <p id="location-text" class="text-xs text-gray-500 mt-2">รอการอนุญาต GPS</p>
+        </div>
+
+        <!-- Risk Badge -->
+        <div id="risk-badge" class="bg-white rounded-lg shadow-lg p-4 hidden">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-semibold text-gray-700">ระดับความเสี่ยง</h3>
+                <span id="risk-level" class="px-3 py-1 text-sm font-bold rounded-full bg-gray-100 text-gray-600">
+                    กำลังโหลด...
+                </span>
+            </div>
+            <div class="space-y-1 text-xs text-gray-600">
+                <p><span class="font-semibold">Heat Index:</span> <span id="heat-index">--</span>°C</p>
+                <p><span class="font-semibold">อุณหภูมิ:</span> <span id="temperature">--</span>°C</p>
+                <p><span class="font-semibold">ความชื้น:</span> <span id="humidity">--</span>%</p>
+            </div>
+            <div id="risk-description" class="mt-2 pt-2 border-t border-gray-200 text-xs text-gray-600">
+                <!-- Will be populated by JS -->
+            </div>
+        </div>
+
+        <!-- Phase 5: 6-Hour Forecast -->
+        <div id="forecast-panel" class="bg-white rounded-lg shadow-lg p-4 mt-4 hidden">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-700">📊 พยากรณ์ 6 ชั่วโมง</h3>
+                <button id="btn-refresh-forecast" class="text-xs text-blue-600 hover:text-blue-700">
+                    🔄 รีเฟรช
+                </button>
+            </div>
+            <div id="forecast-timeline" class="space-y-2">
+                <!-- Will be populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Left Panel - Recommendations -->
+    <div class="left-panel">
+        <div id="recommendations-panel" class="bg-white rounded-lg shadow-lg p-4 hidden">
+            <h3 class="text-sm font-semibold text-gray-700 mb-3">🏢 จุดพักร้อนใกล้คุณ</h3>
+            <div id="recommendations-list" class="space-y-2">
+                <!-- Will be populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav bg-white/95 backdrop-blur-md shadow-2xl border-t border-gray-200">
+        <div class="container mx-auto px-3 py-4">
+            <div class="flex justify-around items-center gap-2">
+                <button id="btn-recenter" class="flex items-center gap-2 px-4 py-2.5 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <span class="text-sm font-medium">ตำแหน่งฉัน</span>
+                </button>
+
+                <button id="btn-cooling-centers" class="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-full hover:bg-blue-500 hover:text-white transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                    </svg>
+                    <span class="text-sm font-medium">จุดพักร้อน</span>
+                </button>
+
+                <button id="btn-hazard-zones" class="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-full hover:bg-blue-500 hover:text-white transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    <span class="text-sm font-medium">พื้นที่เสี่ยง</span>
+                </button>
+
+                <button id="btn-filter" class="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-full hover:bg-blue-500 hover:text-white transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                    </svg>
+                    <span class="text-sm font-medium">ตั้งค่า</span>
+                </button>
+
+                <button id="btn-info" class="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-full hover:bg-blue-500 hover:text-white transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="text-sm font-medium">ข้อมูล</span>
+                </button>
+
+                <button id="btn-navigation" class="flex items-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-full hover:bg-red-500 hover:text-white transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                    </svg>
+                    <span class="text-sm font-medium">หยุดนำทาง</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Profile (REMOVED - Merged into Filter Modal) -->
+
+    <!-- Modal: Filter -->
+    <div id="modal-filter" class="fixed inset-0 bg-black bg-opacity-50 z-[2000] hidden flex items-end">
+        <div class="bg-white rounded-t-2xl p-6 w-full max-w-md mx-auto animate-slide-up">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-800">⚙️ ตั้งค่า</h3>
+                <button id="close-filter" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+
+            <!-- Risk Profile Section -->
+            <div class="mb-6">
+                <label class="text-sm font-semibold mb-2 block">👤 เลือกกลุ่มเสี่ยง:</label>
+                <div class="space-y-2">
+                    <label class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50">
+                        <input type="radio" name="risk-profile-modal" value="general" checked class="mr-3 w-5 h-5">
+                        <div>
+                            <div class="font-semibold text-sm">ทั่วไป</div>
+                            <div class="text-xs text-gray-600">อายุ 18-60 ปี</div>
+                        </div>
+                    </label>
+                    <label class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50">
+                        <input type="radio" name="risk-profile-modal" value="elderly" class="mr-3 w-5 h-5">
+                        <div>
+                            <div class="font-semibold text-sm">ผู้สูงอายุ</div>
+                            <div class="text-xs text-gray-600">อายุ 60+ ปี</div>
+                        </div>
+                    </label>
+                    <label class="flex items-center p-3 border-2 rounded-lg cursor-pointer hover:bg-gray-50">
+                        <input type="radio" name="risk-profile-modal" value="outdoor_worker" class="mr-3 w-5 h-5">
+                        <div>
+                            <div class="font-semibold text-sm">คนทำงานกลางแจ้ง</div>
+                            <div class="text-xs text-gray-600">ทำงานนอกอาคาร</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Distance Filter Section -->
+            <div class="mb-4">
+                <label class="text-sm font-semibold mb-2 block">📍 ระยะทาง:</label>
+                <select id="modal-filter-distance" class="w-full px-4 py-3 border-2 rounded-lg">
+                    <option value="5000">ทั้งหมด (< 5 km)</option>
+                    <option value="1000">< 1 km</option>
+                    <option value="2000">< 2 km</option>
+                    <option value="3000">< 3 km</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Info/Knowledge -->
+    <div id="modal-info" class="fixed inset-0 bg-black bg-opacity-50 z-[2000] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-gray-800">📚 คู่มือความรู้ - CoolZone</h3>
+                <button id="close-info" class="text-gray-500 hover:text-gray-700 text-3xl leading-none">&times;</button>
+            </div>
+
+            <div class="p-6 space-y-6">
+                <!-- Heat Index Section -->
+                <div class="border-l-4 border-red-500 pl-4">
+                    <h4 class="text-lg font-bold text-gray-800 mb-2">🌡️ Heat Index (ดัชนีความร้อน) คือ?</h4>
+                    <p class="text-sm text-gray-700 mb-3">
+                        Heat Index หรือ "ดัชนีความร้อน" คือ ค่าที่แสดงถึงความร้อนที่ร่างกายมนุษย์รู้สึกได้จริง
+                        โดยคำนวณจากอุณหภูมิอากาศและความชื้นสัมพัทธ์รวมกัน เพราะเมื่อความชื้นสูง
+                        เหงื่อจะระเหยได้ช้าลง ทำให้ร่างกายระบายความร้อนได้ไม่ดี และรู้สึกร้อนมากขึ้น
+                    </p>
+
+                    <div class="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-3">
+                        <h5 class="font-semibold text-sm text-orange-900 mb-2">📐 สูตรคำนวณ Heat Index:</h5>
+                        <p class="text-xs text-gray-700 font-mono bg-white p-2 rounded border border-orange-100 mb-2">
+                            HI = -8.78 + 1.61T + 2.34RH - 0.146T×RH
+                        </p>
+                        <p class="text-xs text-gray-600">
+                            โดยที่ <strong>T</strong> = อุณหภูมิ (°C), <strong>RH</strong> = ความชื้นสัมพัทธ์ (%)
+                        </p>
+                        <p class="text-xs text-gray-500 mt-2 italic">
+                            * สูตรนี้เป็นแบบง่ายสำหรับการคำนวณเบื้องต้น (Simplified Heat Index Formula)
+                        </p>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <h5 class="font-semibold text-sm text-blue-900 mb-2">💡 ตัวอย่าง:</h5>
+                        <p class="text-xs text-gray-700">
+                            • อุณหภูมิ 32°C + ความชื้น 70% → Heat Index ≈ 40°C<br>
+                            • อุณหภูมิ 35°C + ความชื้น 60% → Heat Index ≈ 46°C<br>
+                            • อุณหภูมิ 38°C + ความชื้น 50% → Heat Index ≈ 49°C
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Risk Levels Section -->
+                <div class="border-l-4 border-yellow-500 pl-4">
+                    <h4 class="text-lg font-bold text-gray-800 mb-2">⚠️ ระดับความเสี่ยง</h4>
+                    <div class="space-y-2">
+                        <div class="flex items-start space-x-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <span class="text-2xl">🟢</span>
+                            <div>
+                                <h5 class="font-semibold text-sm text-green-800">ปลอดภัย (LOW)</h5>
+                                <p class="text-xs text-gray-700">Heat Index &lt; 32°C - สามารถทำกิจกรรมกลางแจ้งได้ตามปกติ</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start space-x-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <span class="text-2xl">🟡</span>
+                            <div>
+                                <h5 class="font-semibold text-sm text-yellow-800">ระวัง (MEDIUM)</h5>
+                                <p class="text-xs text-gray-700">Heat Index 32-40°C - ควรระมัดระวัง ดื่มน้ำบ่อยๆ หลีกเลี่ยงแดดจัด</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start space-x-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <span class="text-2xl">🔴</span>
+                            <div>
+                                <h5 class="font-semibold text-sm text-red-800">อันตราย (HIGH)</h5>
+                                <p class="text-xs text-gray-700">Heat Index &gt; 40°C - เสี่ยงลมแดด/ฮีทสโตรก หลีกเลี่ยงกิจกรรมกลางแจ้ง</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Risk Groups Section -->
+                <div class="border-l-4 border-purple-500 pl-4">
+                    <h4 class="text-lg font-bold text-gray-800 mb-2">👥 กลุ่มเสี่ยง</h4>
+                    <div class="space-y-3">
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                            <h5 class="font-semibold text-sm text-gray-800 mb-1">👤 ทั่วไป (General)</h5>
+                            <p class="text-xs text-gray-700">
+                                บุคคลวัย 18-60 ปี สุขภาพแข็งแรง ใช้เกณฑ์ความเสี่ยงมาตรฐาน
+                            </p>
+                        </div>
+
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                            <h5 class="font-semibold text-sm text-gray-800 mb-1">👴 ผู้สูงอายุ (Elderly)</h5>
+                            <p class="text-xs text-gray-700">
+                                อายุ 60+ ปี ร่างกายควบคุมอุณหภูมิได้ไม่ดี เกณฑ์เข้มงวดกว่าปกติ -3°C
+                            </p>
+                        </div>
+
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                            <h5 class="font-semibold text-sm text-gray-800 mb-1">🏗️ คนทำงานกลางแจ้ง (Outdoor Worker)</h5>
+                            <p class="text-xs text-gray-700">
+                                ทำงานกลางแจ้งเป็นเวลานาน สูญเสียน้ำและเกลือแร่มาก เกณฑ์เข้มงวดกว่าปกติ -2°C
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features Section -->
+                <div class="border-l-4 border-blue-500 pl-4">
+                    <h4 class="text-lg font-bold text-gray-800 mb-2">🎯 ฟีเจอร์ของระบบ</h4>
+                    <ul class="space-y-2 text-sm text-gray-700">
+                        <li class="flex items-start">
+                            <span class="mr-2">📍</span>
+                            <span><strong>GPS แบบเรียลไทม์:</strong> ติดตามตำแหน่งของคุณและคำนวณความเสี่ยงในพื้นที่</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">❄️</span>
+                            <span><strong>จุดพักร้อน:</strong> แสดงสถานที่พักผ่อนที่มีเครื่องปรับอากาศใกล้คุณ</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">⚠️</span>
+                            <span><strong>พื้นที่เสี่ยง:</strong> เตือนจุดที่มีความร้อนสูงและควรหลีกเลี่ยง</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">📊</span>
+                            <span><strong>พยากรณ์ 6 ชั่วโมง:</strong> ดูแนวโน้มความร้อนล่วงหน้า วางแผนเดินทาง</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🧭</span>
+                            <span><strong>นำทาง:</strong> คำนวณเส้นทางไปยังจุดพักร้อนที่ปลอดภัย</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">🔔</span>
+                            <span><strong>การแจ้งเตือน:</strong> แจ้งเตือนทันทีเมื่อเข้าใกล้พื้นที่เสี่ยงสูง</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Tips Section -->
+                <div class="border-l-4 border-green-500 pl-4">
+                    <h4 class="text-lg font-bold text-gray-800 mb-2">💊 คำแนะนำการป้องกัน</h4>
+                    <div class="space-y-2 text-sm text-gray-700">
+                        <div class="flex items-start">
+                            <span class="mr-2">💧</span>
+                            <span>ดื่มน้ำสะอาดบ่อยๆ อย่างน้อย 2-3 ลิตรต่อวัน</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="mr-2">🧢</span>
+                            <span>สวมหมวก แว่นกันแดด และเสื้อผ้าสีอ่อนระบายอากาศได้ดี</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="mr-2">🏠</span>
+                            <span>หลีกเลี่ยงการออกกลางแจ้งช่วง 11:00-15:00 น.</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="mr-2">❄️</span>
+                            <span>พักผ่อนในที่ร่มเย็นหรือห้องแอร์เป็นระยะๆ</span>
+                        </div>
+                        <div class="flex items-start">
+                            <span class="mr-2">🏥</span>
+                            <span>หากมีอาการวิงเวียน คลื่นไส้ หัวใจเต้นเร็ว ให้หาแพทย์ทันที</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- About Section -->
+                <div class="border-t border-gray-200 pt-4 mt-4">
+                    <p class="text-xs text-gray-500 text-center">
+                        CoolZone v1.0 - ระบบเตือนภัยความร้อนเมือง<br>
+                        พัฒนาเพื่อความปลอดภัยของประชาชนในเขตเมือง
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Leaflet Routing Machine JS -->
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
+    <!-- API Client -->
+    <script src="src/api.js"></script>
+
+    <!-- Markers Module -->
+    <script src="src/markers.js"></script>
+
+    <!-- Main App JS -->
+    <script src="src/app.js"></script>
+
+</body>
+</html>
