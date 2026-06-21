@@ -447,8 +447,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 ผู้พัฒนา | Contributors
 
-- **กาฟิว** - Backend Development
-- **ต้นกล้า** - Frontend Development
+- **Chicken.4r1n**
 
 พัฒนาสำหรับ **Hackatech 2026**
 
