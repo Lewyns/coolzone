@@ -465,7 +465,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Contact
 
 - **GitHub Issues:** [Report a bug or request a feature](https://github.com/your-username/coolzone/issues)
-- **Email:** your-email@example.com
+- **Email:** lewyns1984@gmail.com
 
 ---
 
