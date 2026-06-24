@@ -119,7 +119,7 @@ CoolZone ให้บริการ:
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/your-username/coolzone.git
+git clone https://github.com/Lewyns/coolzone.git
 cd coolzone
 ```
 
@@ -464,7 +464,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Contact
 
-- **GitHub Issues:** [Report a bug or request a feature](https://github.com/your-username/coolzone/issues)
+- **GitHub Issues:** [Report a bug or request a feature](https://github.com/Lewyns/coolzone/issues)
 - **Email:** lewyns1984@gmail.com
 
 ---
